@@ -8,11 +8,7 @@ This script will help you setup for multiple remote servers for a repository.
 
 Pull the file from the repository:
 ```bash
-<<<<<<< HEAD
 $ git clone https://github.com/albertpark/multi-remote.git
-=======
-$ git clone https://github.com/albertpark/git-multi-remote.git
->>>>>>> d41d541f3bdad72b3285c1d16f9f7aa1eef8117c
 ```
 
 Here is the help menu:
