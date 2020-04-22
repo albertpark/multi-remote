@@ -11,6 +11,8 @@ REMOTES=(
   [hub]=github.com
   [lab]=gitlab.com
 )
+# Set the main origin remote
+ORIGIN=${REMOTES[hub]}
 
 # Set ssl connection
 SSL=false
@@ -29,6 +31,7 @@ Options:
   --user <user>
     -r <repo> Name of the git repository
   --repo <repo>
+  --git     Use git connection
   --ssl     Use https connection (default is git)
 
 "
@@ -43,8 +46,8 @@ check_ssl() {
   fi
 }
 
-remote_main() {
-  main="git remote add origin $CONN${REMOTES[hub]}$POST$USER/$REPO.git"
+remote_origin() {
+  main="git remote add origin $CONN$ORIGIN$POST$USER/$REPO.git"
   echo "$main"
   $main
 }
@@ -126,6 +129,10 @@ do
       set_username "$1"
       ;;
 
+    -g|-git|--git)
+      SSL=true
+      ;;
+
     -s|-ssl|--ssl)
       SSL=true
       ;;
@@ -144,7 +151,7 @@ done
 # Make sure to check the connection first
 check_ssl
 
-remote_main
+remote_origin
 
 remote_add
 

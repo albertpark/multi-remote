@@ -22,6 +22,7 @@ Options:
   --user <user>
     -r <repo> Name of the git repository
   --repo <repo>
+  --git     Use git connection
   --ssl     Use https connection (default is git)
 ```
 
