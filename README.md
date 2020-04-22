@@ -16,20 +16,20 @@ Here is the help menu:
 $ cd multi-remote
 $ ./git-multi-remote.sh --h
 Add multiple server for the same repository <repo>.
-Note: The argument order matters.
+Note: The argument order does not matter.
 Options:
     -u <user> Username of the repository
-   --user <user>
+  --user <user>
     -r <repo> Name of the git repository
   --repo <repo>
-    --ssl     Use https connection (default is git)
+  --ssl     Use https connection (default is git)
 ```
 
 Now go to your desired directory to set up multiple remote servers and run the script by replacing the `<username>` and `<repo>` to your username and repository name:
 
 ```bash
-$ git init ./tmp/repo
-$ cd ./tmp/repo
+$ git init tmp/repo
+$ cd tmp/repo
 $ ../multi-remote/git-multi-remote.sh -u <username> -r <repo> --ssl
 ```
 
