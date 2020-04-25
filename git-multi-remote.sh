@@ -3,28 +3,40 @@
 # Add Multiple Repository Server Script
 # usage: git-multi-remote.sh -u username -r repository
 
-declare -A REMOTES     # Explicitly declare key value array
+# Get the script directory to find the config file
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+
+# Connection to the url address
+declare -A URL
+URL=(
+  [CON]=""
+  [AND]=""
+)
 
 # Comment out the repository servers you do not have with the '#' character
+declare -A REMOTES     # Explicitly declare key value array
 REMOTES=(
-  [buc]=bitbucket.org
   [hub]=github.com
-  [lab]=gitlab.com
 )
+
+# Use the remote.conf file to setup configuration
+declare -A CONFIG
+CONFIG=(
+  [SSL]=false
+  [USER]=""
+  [REPO]=""
+)
+
 # Set the main origin remote
-ORIGIN=${REMOTES[hub]}
+ORIGIN="${REMOTES[hub]}"
 
-# Set ssl connection
-SSL=false
-
-USER=""
-REPO=""
-
-CONN=""
-POST=""
 
 USAGE="[-u <user>] [-r <repo>] [--ssl]"
 LONG_USAGE="Add multiple server for the same repository <repo>.
+Config: Use 'remote.conf' to configure variables.
+        Keep in mind using argument options 
+        will override the configuration variables.
+
 Note: The argument order does not matter.
 Options:
     -u <user> Username of the repository
@@ -35,19 +47,111 @@ Options:
   --ssl     Use https connection (default is git)
 
 "
+
 # Functions need to be set before getting called
 check_ssl() {
-  if [ "$SSL" = true ]; then
-    CONN="https://"
-    POST="/"
+  if [ "${CONFIG[SSL]}" = true ]; then
+    URL[CON]="https://"
+    URL[AND]="/"
   else
-    CONN="git@"
-    POST=":"
+    URL[CON]="git@"
+    URL[AND]=":"
   fi
 }
 
+init_config() {
+  # while IFS= read -r line;
+  while read line
+  do
+    if echo $line | grep -F = &>/dev/null; then
+      # Skip comments lines using regular experssion with wildcards in double brackets
+      if [[ $line =~ ^# ]]; then continue; fi
+
+      # Get the main configuration variable
+      conf=$(echo "$line" | cut -d '=' -f 1)
+      # Identify the identifier and key
+      var=$(echo "$conf" | cut -d '.' -f 1)
+      key=$(echo "$conf" | cut -d '.' -f 2-)
+      # Fetch the value
+      val=$(echo "$line" | cut -d '=' -f 2-)
+
+      # echo "$var [ ${key^^} ] = $val"
+
+      # Skip unassigned variables
+      if [ -z $val ]; then continue; fi
+
+      # Assign the configurations
+      case "$var" in
+        REMOTES)
+          REMOTES[$key]=$val
+          ;;
+
+        CONFIG)
+          if [ $key = "ssl" ]; then
+            CONFIG[${key^^}]=$val
+          else
+            CONFIG[${key^^}]=$(echo "$val")
+          fi
+          ;;
+      esac
+    fi
+  done < "$DIR/remote.conf"
+}
+
+main() {
+  # Check if current directory is a git repository
+  if [ -d .git ]; then
+    #echo .git
+    echo "adding multiple repositories";
+  else
+    git rev-parse --git-dir 2> /dev/null;
+    echo "fatal: not a git repository"
+    exit 0
+  fi;
+
+  # Loop to fetch all the commands
+  while case "$#" in 0) break ;; esac
+  do
+    # echo "Looping: $1"
+    # echo "value: $2"
+    case "$1" in
+      -h|--help)
+        show_help
+        ;;
+
+      -r|--r|--re|--rep|--repo)
+        shift
+        set_repository "$1"
+        ;;
+
+      -u|--u|--user)
+        shift
+        set_username "$1"
+        ;;
+
+      -g|-git|--git)
+        CONFIG[SSL]=false
+        ;;
+
+      -s|-ssl|--ssl)
+        CONFIG[SSL]=true
+        ;;
+
+      -*)
+        break
+        ;;
+
+      *)
+        break
+        ;;
+    esac
+    # get the next variable
+    shift
+  done
+}
+
 remote_origin() {
-  main="git remote add origin $CONN$ORIGIN$POST$USER/$REPO.git"
+  main="git remote add origin ${URL[CON]}$ORIGIN${URL[AND]}${CONFIG[USER]}/${CONFIG[REPO]}.git"
   echo "$main"
   $main
 }
@@ -55,20 +159,20 @@ remote_origin() {
 remote_add() {
   for i in "${!REMOTES[@]}"
   do
-      key=$i
-      url=${REMOTES[$i]}
-      add_repo="git remote add $key $CONN$url$POST$USER/$REPO.git"
-      echo "$add_repo"
-      $add_repo
+    key=$i
+    url=${REMOTES[$i]}
+    add_repo="git remote add $key ${URL[CON]}$url${URL[AND]}${CONFIG[USER]}/${CONFIG[REPO]}.git"
+    echo "$add_repo"
+    $add_repo
   done
 }
 
 remote_seturl() {
   for i in "${!REMOTES[@]}"
   do
-      set_url="git remote set-url --add --push origin $CONN${REMOTES[$i]}$POST$USER/$REPO.git"
-      echo "$set_url"
-      $set_url
+    set_url="git remote set-url --add --push origin ${URL[CON]}${REMOTES[$i]}${URL[AND]}${CONFIG[USER]}/${CONFIG[REPO]}.git"
+    echo "$set_url"
+    $set_url
   done
 }
 
@@ -80,11 +184,11 @@ show_help() {
 }
 
 set_repository() {
-  REPO="$1"
+  CONFIG[REPO]="$1"
 }
 
 set_username() {
-  USER="$1"
+  CONFIG[USER]="$1"
 }
 
 show_origin() {
@@ -97,56 +201,11 @@ show_origin() {
 #     MAIN CODE STARTS HERE     #
 #################################
 
-# Check if current directory is a git repository
-if [ -d .git ]; then
-  #echo .git
-  echo "adding multiple repositories";
-else
-  git rev-parse --git-dir 2> /dev/null;
-  echo "fatal: not a git repository"
-  exit 0
-fi;
+# Load the configuration
+init_config
 
-# Loop to fetch all the commands
-while case "$#" in 0) break ;; esac
-do
-  # echo "Looping: $1"
-  # echo "value: $2"
-  case "$1" in
-    -h|--help)
-      show_help
-      ;;
-
-    -r|--r|--re|--rep|--repo)
-      # get the next variable
-      shift
-      set_repository "$1"
-      ;;
-
-    -u|--u|--user)
-      # get the next variable
-      shift
-      set_username "$1"
-      ;;
-
-    -g|-git|--git)
-      SSL=true
-      ;;
-
-    -s|-ssl|--ssl)
-      SSL=true
-      ;;
-
-    -*)
-      break
-      ;;
-
-    *)
-      break
-      ;;
-  esac
-  shift
-done
+# Options passed in the arguments will override the configuration
+main "$@"
 
 # Make sure to check the connection first
 check_ssl
@@ -158,3 +217,5 @@ remote_add
 remote_seturl
 
 show_origin
+
+exit 0

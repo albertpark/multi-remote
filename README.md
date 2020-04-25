@@ -36,6 +36,23 @@ $ ../multi-remote/git-multi-remote.sh -u <username> -r <repo> --ssl
 
 The `--ssl` flag is optional and will set the remote with `HTTPS` connection. The default connection will be `SSH`.
 
+## Configuration
+
+Included a configuration file to setup multiple remote servers and username including ssl connection in `remote.conf`:
+```
+REMOTES.buc=bitbucket.org
+REMOTES.hub=github.com
+REMOTES.lab=gitlab.com
+
+# Set ssl connection
+CONFIG.ssl=true
+
+# Set uername and repository
+CONFIG.user=albertpark
+CONFIG.repo=multi-remote
+```
+Note: Options passed in the arguments will override the configuration settings.
+
 ## License
 
 MIT
