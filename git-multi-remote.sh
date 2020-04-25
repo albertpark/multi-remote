@@ -115,7 +115,7 @@ main() {
     # echo "Looping: $1"
     # echo "value: $2"
     case "$1" in
-      -h|--help)
+      -h|--h|--help)
         show_help
         ;;
 
