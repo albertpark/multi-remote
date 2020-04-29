@@ -22,8 +22,8 @@ Options:
    --user <user>
     -r <repo> Name of the git repository
    --repo <repo>
-   --git     Use git connection
-   --ssl     Use https connection (default is git)
+   --git      Use git connection
+   --ssl      Use https connection (default is git)
 ```
 
 Now go to your desired directory to set up multiple remote servers and run the script by replacing the `<username>` and `<repo>` to your username and repository name:

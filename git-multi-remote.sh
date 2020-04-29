@@ -18,6 +18,8 @@ declare -A REMOTES     # Explicitly declare key value array
 REMOTES=(
   [hub]=github.com
 )
+# Reserve booleans to check if remotes have been already added
+declare -A STATUS
 
 # Use the remote.conf file to setup configuration
 declare -A CONFIG
@@ -43,8 +45,8 @@ Options:
    --user <user>
     -r <repo> Name of the git repository
    --repo <repo>
-   --git     Use git connection
-   --ssl     Use https connection (default is git)
+   --git      Use git connection
+   --ssl      Use https connection (default is git)
 
 "
 
@@ -122,6 +124,7 @@ init_config() {
       case "$var" in
         REMOTES)
           REMOTES[$key]=$val
+          STATUS[$key]=true
           ;;
 
         CONFIG)
@@ -190,17 +193,26 @@ remote_add() {
     key=$i
     url=${REMOTES[$i]}
     add_repo="git remote add $key ${URL[CON]}$url${URL[AND]}${CONFIG[USER]}/${CONFIG[REPO]}.git"
+
     echo "$add_repo"
     $add_repo
+    # Fetch the output result 0 means the remote was added successfully
+    result=$?
+    # Make sure we do not get a failure otherwise skip adding the remote set-url
+    if [[ $result -ne 0 ]]; then
+        STATUS[$i]=false
+    fi
   done
 }
 
 remote_seturl() {
   for i in "${!REMOTES[@]}"
   do
-    set_url="git remote set-url --add --push origin ${URL[CON]}${REMOTES[$i]}${URL[AND]}${CONFIG[USER]}/${CONFIG[REPO]}.git"
-    echo "$set_url"
-    $set_url
+    if [ "${STATUS[$i]}" = true ]; then
+      set_url="git remote set-url --add --push origin ${URL[CON]}${REMOTES[$i]}${URL[AND]}${CONFIG[USER]}/${CONFIG[REPO]}.git"
+      echo "$set_url"
+      $set_url
+    fi
   done
 }
 
@@ -221,7 +233,8 @@ set_username() {
 
 show_origin() {
   show="git remote show origin"
-  echo "$show"
+  echo "
+$show"
   $show
 }
 
