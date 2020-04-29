@@ -15,15 +15,15 @@ Here is the help menu:
 ```bash
 $ cd multi-remote
 $ ./git-multi-remote.sh --h
-Add multiple server for the same repository <repo>.
+Add multiple remotes(server) for the same repository <repo>.
 Note: The argument order does not matter.
 Options:
     -u <user> Username of the repository
-  --user <user>
+   --user <user>
     -r <repo> Name of the git repository
-  --repo <repo>
-  --git     Use git connection
-  --ssl     Use https connection (default is git)
+   --repo <repo>
+   --git     Use git connection
+   --ssl     Use https connection (default is git)
 ```
 
 Now go to your desired directory to set up multiple remote servers and run the script by replacing the `<username>` and `<repo>` to your username and repository name:
@@ -34,7 +34,7 @@ $ cd tmp/repo
 $ ../multi-remote/git-multi-remote.sh -u <username> -r <repo> --ssl
 ```
 
-The `--ssl` flag is optional and will set the remote with `HTTPS` connection. The default connection will be `SSH`.
+The `--ssl` flag is optional and will set the remote with `HTTPS` connection. The default connection will be `SSH`. When `<repo>` is not configured or defined the script will use the working directory as the default repository name.
 
 ## Configuration
 

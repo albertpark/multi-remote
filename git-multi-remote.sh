@@ -32,7 +32,7 @@ ORIGIN="${REMOTES[hub]}"
 
 
 USAGE="[-u <user>] [-r <repo>] [--ssl]"
-LONG_USAGE="Add multiple server for the same repository <repo>.
+LONG_USAGE="Add multiple remotes(server) for the same repository <repo>.
 Config: Use 'remote.conf' to configure variables.
         Keep in mind using argument options 
         will override the configuration variables.
@@ -40,13 +40,40 @@ Config: Use 'remote.conf' to configure variables.
 Note: The argument order does not matter.
 Options:
     -u <user> Username of the repository
-  --user <user>
+   --user <user>
     -r <repo> Name of the git repository
-  --repo <repo>
-  --git     Use git connection
-  --ssl     Use https connection (default is git)
+   --repo <repo>
+   --git     Use git connection
+   --ssl     Use https connection (default is git)
 
 "
+
+directory_as_repository() {
+  IFS='/'
+   # Read pwd into an array as tokens separated by IFS
+  read -ra FULLPATH <<< "$PWD"
+  # Reset to default value after usage
+  IFS=' '
+
+  # Get the last index to get the current directory
+  last=$(("${#FULLPATH[@]}"-1))
+  repo="${FULLPATH[$last]}"
+
+  echo "multi-remote: using '$repo' as default repository"
+  set_repository $repo
+}
+
+# Check if current directory is a git repository
+check_git() {
+  if [ -d .git ]; then
+    echo "multi-remote: adding multiple remotes for '${CONFIG[REPO]}'
+"
+  else
+    git rev-parse --git-dir 2> /dev/null
+    echo "fatal: not a git repository"
+    exit 0
+  fi
+}
 
 # Functions need to be set before getting called
 check_ssl() {
@@ -56,6 +83,17 @@ check_ssl() {
   else
     URL[CON]="git@"
     URL[AND]=":"
+  fi
+}
+
+check_variables() {
+  if [ -z "${CONFIG[USER]}" ]; then
+    echo "fatal: username is empty"
+    exit 0
+  fi
+
+  if [ -z "${CONFIG[REPO]}" ]; then
+    directory_as_repository
   fi
 }
 
@@ -99,16 +137,6 @@ init_config() {
 }
 
 main() {
-  # Check if current directory is a git repository
-  if [ -d .git ]; then
-    #echo .git
-    echo "adding multiple repositories";
-  else
-    git rev-parse --git-dir 2> /dev/null;
-    echo "fatal: not a git repository"
-    exit 0
-  fi;
-
   # Loop to fetch all the commands
   while case "$#" in 0) break ;; esac
   do
@@ -208,8 +236,13 @@ init_config
 main "$@"
 
 # Make sure to check the connection first
+check_variables
+
 check_ssl
 
+check_git
+
+# After checking all the requirements start the git remote process
 remote_origin
 
 remote_add
