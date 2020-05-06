@@ -23,10 +23,6 @@ show_help() {
   exit 0
 }
 
-#if [ "$#" -lt 1 ]; then
-#  show_help
-#fi
-
 # Show the help message right away
 case "$1" in
   -h|--h)
@@ -68,23 +64,8 @@ CONFIG=(
 )
 
 # Set the main origin remote
+GIT_DIR=""
 ORIGIN="${REMOTES[gh]}"
-
-
-directory_as_repository() {
-  IFS='/'
-   # Read pwd into an array as tokens separated by IFS
-  read -ra FULLPATH <<< "$PWD"
-  # Reset to default value after usage
-  IFS=' '
-
-  # Get the last index to get the current directory
-  last=$(("${#FULLPATH[@]}"-1))
-  repo="${FULLPATH[$last]}"
-
-  echo "multi-remote: using '$repo' as default repository"
-  set_repository $repo
-}
 
 # Check if current directory is a git repository
 check_git() {
@@ -116,8 +97,24 @@ check_variables() {
   fi
 
   if [ -z "${CONFIG[REPO]}" ]; then
-    directory_as_repository
+    echo "fatal: repository is empty"
+    exit 0
   fi
+}
+
+fetch_git_directory() {
+  IFS='/'
+   # Read pwd into an array as tokens separated by IFS
+  read -ra FULLPATH <<< "$PWD"
+  # Reset to default value after usage
+  IFS=' '
+
+  # Get the last index to get the current directory
+  last=$(("${#FULLPATH[@]}"-1))
+  repo="${FULLPATH[$last]}"
+
+  GIT_DIR=$repo
+  echo "multi-remote: using '$repo' as default repository"
 }
 
 init_config() {
@@ -151,6 +148,10 @@ init_config() {
         CONFIG)
           if [ $key = "ssl" ]; then
             CONFIG[${key^^}]=$val
+          elif [ $key = "repo" ] && [ $val = "GIT_DIR" ];then
+            fetch_git_directory
+            default="$val[@]"
+            CONFIG[${key^^}]=${!default}
           else
             CONFIG[${key^^}]=$(echo "$val")
           fi
@@ -251,10 +252,6 @@ $show"
 #################################
 #     MAIN CODE STARTS HERE     #
 #################################
-
-#IFS=$(echo -en "\n\b")
-
-#TAC=$(which tac || echo 'tail -r')
 
 # Load the configuration
 init_config
