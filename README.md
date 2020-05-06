@@ -34,7 +34,7 @@ $ cd tmp/repo
 $ ../multi-remote/git-multi-remote.sh -u <username> -r <repo> --ssl
 ```
 
-The `--ssl` flag is optional and will set the remote with `HTTPS` connection. The default connection will be `SSH`. When `<repo>` is not configured or defined the script will use the working directory as the default repository name.
+The `--ssl` flag is optional and will set the remote with a `HTTPS` connection. The default connection will be `SSH` (`git`). When `<repo>` is not configured or defined the script will use the working directory as the default repository name.
 
 ## Configuration
 
