@@ -26,7 +26,7 @@ show_help() {
 
 # Show the help message right away
 case "$1" in
-  -h|--h)
+  -h|--h|--help)
     show_help
     ;;
 esac
@@ -74,8 +74,8 @@ check_git() {
     echo "multi-remote: adding multiple remotes for '${CONFIG[REPO]}'
 "
   else
-    git rev-parse --git-dir 2> /dev/null
     echo "fatal: not a git repository"
+    #git rev-parse --git-dir 2> /dev/null
     exit 0
   fi
 }
@@ -255,6 +255,9 @@ $show"
 #     MAIN CODE STARTS HERE     #
 #################################
 
+# First check if the directory has a .git folder
+check_git
+
 # Load the configuration
 init_config
 
@@ -265,8 +268,6 @@ main "$@"
 check_variables
 
 check_ssl
-
-check_git
 
 # After checking all the requirements start the git remote process
 remote_origin
