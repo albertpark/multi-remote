@@ -150,6 +150,7 @@ init_config() {
             CONFIG[${key^^}]=$val
           elif [ $key = "repo" ] && [ $val = "GIT_DIR" ];then
             fetch_git_directory
+            # Store the variable so we can access the actual value
             default="$val[@]"
             CONFIG[${key^^}]=${!default}
           else
@@ -168,7 +169,7 @@ main() {
     # echo "Looping: $1"
     # echo "value: $2"
     case "$1" in
-      -r|--r|--re|--rep|--repo)
+      -r|--r|--repo)
         shift
         set_repository "$1"
         ;;
