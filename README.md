@@ -1,20 +1,26 @@
-# git-multi-remote.sh - Add multiple remote servers
+# git multi-remote - Add multiple remote servers
 
 ## Introduction
 
 This script will help you setup for multiple remote servers for a repository.
 
-## Usage
+## Installation
 
 Pull the file from the repository:
 ```bash
-$ git clone https://github.com/albertpark/multi-remote.git
+→ $ git clone https://github.com/albertpark/multi-remote.git
 ```
+
+In order to use git-multi-remote script as new subcommands with git, it needs to be available in your `PATH` environment:
+```bash
+→ $ export PATH=$PATH:~/multi-remote/bin
+```
+
+## Usage
 
 Here is the help menu:
 ```bash
-$ cd multi-remote
-$ ./git-multi-remote.sh --h
+→ $ git multi-remote -h
 Add multiple remotes(server) for the same repository <repo>.
 Note: The argument order does not matter.
 Options:
@@ -29,9 +35,9 @@ Options:
 Now go to your desired directory to set up multiple remote servers and run the script by replacing the `<username>` and `<repo>` to your username and repository name:
 
 ```bash
-$ git init tmp/repo
-$ cd tmp/repo
-$ ../multi-remote/git-multi-remote.sh -u <username> -r <repo> --ssl
+→ $ cd tmp/repo
+→ $ git init
+→ $ git multi-remote -u <username> -r <repo> --ssl
 ```
 
 The `--ssl` flag is optional and will set the remote with a `HTTPS` connection. The default connection will be `SSH` (`git`). When `<repo>` is not configured or defined the script will use the working directory as the default repository name.
@@ -40,9 +46,9 @@ The `--ssl` flag is optional and will set the remote with a `HTTPS` connection. 
 
 Included a configuration file to setup multiple remote servers and username including ssl connection in `remote.conf`:
 ```
-REMOTES.buc=bitbucket.org
-REMOTES.hub=github.com
-REMOTES.lab=gitlab.com
+REMOTES.bb=bitbucket.org
+REMOTES.gh=github.com
+REMOTES.gl=gitlab.com
 
 # Set ssl connection
 CONFIG.ssl=true
