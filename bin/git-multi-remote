@@ -90,12 +90,12 @@ check_ssl() {
 
 check_variables() {
   if [ -z "${CONFIG[USER]}" ]; then
-    echo "fatal: username is empty"
+    echo "fatal: username is empty. use -u <user>"
     exit 0
   fi
 
   if [ -z "${CONFIG[REPO]}" ]; then
-    echo "fatal: repository is empty"
+    echo "fatal: repository is empty. use -r <repo>"
     exit 0
   fi
 }
