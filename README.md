@@ -53,7 +53,8 @@ The `--ssl` flag is optional and will set the remote with a `HTTPS` connection. 
 
 Included a configuration file to setup multiple remote servers and username including ssl connection in `remote.conf`:
 ```
-REMOTES.bb=bitbucket.org
+# Mark the origin with '*' otherwise default is github.com
+REMOTES.bb=bitbucket.org*
 REMOTES.gh=github.com
 REMOTES.gl=gitlab.com
 
@@ -62,7 +63,7 @@ CONFIG.ssl=true
 
 # Set uername and repository
 CONFIG.user=albertpark
-# To use directory name as the default repository name use GIT_DIR
+# GIT_DIR will set the directory name as the repository
 CONFIG.repo=multi-remote
 ```
 Note: Options passed in the arguments will override the configuration settings.

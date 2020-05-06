@@ -131,7 +131,7 @@ init_config() {
       # Fetch the value
       val=$(echo "$line" | cut -d '=' -f 2-)
 
-      # echo "$var [ ${key^^} ] = $val"
+      #echo "$var [ ${key^^} ] = $val"
 
       # Skip unassigned variables
       if [ -z $val ]; then continue; fi
@@ -139,6 +139,15 @@ init_config() {
       # Assign the configurations
       case "$var" in
         REMOTES)
+          # the space after the colon is required to get the last character
+          asterisk="${val: -1}"
+          if [ "$asterisk" = "*" ]; then
+            # reassign the val and set the origin
+            val="${val:0: -1}"
+            ORIGIN=$val
+            echo "multi-remote: using '$val' as origin remote"
+          fi
+
           REMOTES[$key]=$val
           STATUS[$key]=true
           ;;
@@ -199,7 +208,7 @@ main() {
 }
 
 remote_origin() {
-  echo "multi-remote: adding multiple remotes for '${CONFIG[REPO]}'
+  echo "multi-remote: adding multiple remotes for '${CONFIG[REPO]}' ...
 "
   main="git remote add origin ${URL[CON]}$ORIGIN${URL[AND]}${CONFIG[USER]}/${CONFIG[REPO]}.git"
   echo "$main"
