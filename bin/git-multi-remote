@@ -70,11 +70,8 @@ ORIGIN="${REMOTES[gh]}"
 
 # Check if current directory is a git repository
 check_git() {
-  if [ -d .git ]; then
-    echo "multi-remote: adding multiple remotes for '${CONFIG[REPO]}'
-"
-  else
-    echo "fatal: not a git repository"
+  if [ ! -d .git ]; then
+    echo "fatal: Not a git repository"
     #git rev-parse --git-dir 2> /dev/null
     exit 0
   fi
@@ -202,6 +199,8 @@ main() {
 }
 
 remote_origin() {
+  echo "multi-remote: adding multiple remotes for '${CONFIG[REPO]}'
+"
   main="git remote add origin ${URL[CON]}$ORIGIN${URL[AND]}${CONFIG[USER]}/${CONFIG[REPO]}.git"
   echo "$main"
   $main
