@@ -22,6 +22,9 @@ Here is the help menu:
 ```bash
 → $ git multi-remote -h
 Add multiple remotes(server) for the same repository <repo>.
+
+Usage: git multi-remote [-u <user>] [-r <repo>] [--ssl]
+
 Note: The argument order does not matter.
 Options:
     -u <user> Username of the repository
@@ -30,13 +33,17 @@ Options:
    --repo <repo>
    --git      Use git connection
    --ssl      Use https connection (default is git)
+
+Config: Use 'remote.conf' to configure variables.
+        Keep in mind using argument options
+        will override the configuration variables.
 ```
 
 Now go to your desired directory to set up multiple remote servers and run the script by replacing the `<username>` and `<repo>` to your username and repository name:
 
 ```bash
-→ $ cd tmp/repo
-→ $ git init
+→ $ git init temp-repo
+→ $ cd temp-repo
 → $ git multi-remote -u <username> -r <repo> --ssl
 ```
 
@@ -55,6 +62,7 @@ CONFIG.ssl=true
 
 # Set uername and repository
 CONFIG.user=albertpark
+# To use directory name as the default repository name use GIT_DIR
 CONFIG.repo=multi-remote
 ```
 Note: Options passed in the arguments will override the configuration settings.
@@ -62,4 +70,3 @@ Note: Options passed in the arguments will override the configuration settings.
 ## License
 
 MIT
-

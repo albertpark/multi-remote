@@ -1,12 +1,7 @@
 #!/bin/bash
 
 USAGE="[-u <user>] [-r <repo>] [--ssl]"
-LONG_USAGE="Add multiple remotes(server) for the same repository <repo>.
-Config: Use 'remote.conf' to configure variables.
-        Keep in mind using argument options 
-        will override the configuration variables.
-
-Note: The argument order does not matter.
+LONG_USAGE="Note: The argument order does not matter.
 Options:
     -u <user> Username of the repository
    --user <user>
@@ -14,10 +9,16 @@ Options:
    --repo <repo>
    --git      Use git connection
    --ssl      Use https connection (default is git)
+
+Config: Use 'remote.conf' to configure variables.
+        Keep in mind using argument options 
+        will override the configuration variables.
 "
 
 show_help() {
-  echo "Usage: $(basename "$0") $USAGE"
+  echo "Add multiple remotes(servers) for the same repository <repo>."
+  echo ""
+  echo "Usage: git multi-remote $USAGE"
   echo ""
   echo "$LONG_USAGE"
   exit 0
