@@ -16,7 +16,7 @@ URL=(
 # Comment out the repository servers you do not have with the '#' character
 declare -A REMOTES     # Explicitly declare key value array
 REMOTES=(
-  [hub]=github.com
+  [gh]=github.com
 )
 # Reserve booleans to check if remotes have been already added
 declare -A STATUS
@@ -30,7 +30,7 @@ CONFIG=(
 )
 
 # Set the main origin remote
-ORIGIN="${REMOTES[hub]}"
+ORIGIN="${REMOTES[gh]}"
 
 
 USAGE="[-u <user>] [-r <repo>] [--ssl]"
