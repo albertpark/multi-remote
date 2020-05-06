@@ -213,13 +213,16 @@ remote_add() {
     url=${REMOTES[$i]}
     add_repo="git remote add $key ${URL[CON]}$url${URL[AND]}${CONFIG[USER]}/${CONFIG[REPO]}.git"
 
-    echo "$add_repo"
     $add_repo
     # Fetch the output result 0 means the remote was added successfully
     result=$?
     # Make sure we do not get a failure otherwise skip adding the remote set-url
     if [[ $result -ne 0 ]]; then
-        STATUS[$i]=false
+      STATUS[$i]=false
+    fi
+    # When the remote was added successful display the command
+    if [[ $result -eq 0 ]]; then
+      echo "$add_repo"
     fi
   done
 }
