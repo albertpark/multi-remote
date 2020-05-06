@@ -32,7 +32,7 @@ case "$1" in
 esac
 
 set -u
-set -e
+#set -e
 
 # Add Multiple Repository Server Script
 # usage: git multi-remote -u <username> -r <repository>
