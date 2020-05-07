@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This script will help you setup for multiple remote servers for a repository.
+This script will help you setup multiple remote servers for the same repository.
 
 ## Installation
 
@@ -11,7 +11,7 @@ Pull the file from the repository:
 → $ git clone https://github.com/albertpark/multi-remote.git
 ```
 
-In order to use git-multi-remote script as new subcommands with git, it needs to be available in your `PATH` environment:
+In order to use `git-multi-remote` script as new subcommands with git, it needs to be available in your `PATH` environment:
 ```bash
 → $ export PATH=$PATH:~/multi-remote/bin
 ```
@@ -44,7 +44,7 @@ Now go to your desired directory to set up multiple remote servers and run the s
 ```bash
 → $ git init temp-repo
 → $ cd temp-repo
-→ $ git multi-remote -u <username> -r <repo> --ssl
+→ $ git multi-remote -u albertpark -r multi-remote --ssl
 ```
 
 The `--ssl` flag is optional and will set the remote with a `HTTPS` connection. The default connection will be `SSH` (`git`). When `<repo>` is not configured or defined the script will use the working directory as the default repository name.
