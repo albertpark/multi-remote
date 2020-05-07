@@ -155,7 +155,7 @@ init_config() {
         CONFIG)
           if [ $key = "ssl" ]; then
             CONFIG[${key^^}]=$val
-          elif [ $key = "repo" ] && [ $val = "GIT_DIR" ];then
+          elif [ $key = "repo" ] && [ $val = "GIT_DIR" ]; then
             fetch_git_directory
             # Store the variable so we can access the actual value
             default="$val[@]"
