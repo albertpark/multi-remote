@@ -1,10 +1,45 @@
 #!/bin/bash
 
+USAGE="[-u <user>] [-r <repo>] [--ssl]"
+LONG_USAGE="Note: The argument order does not matter.
+Options:
+    -u <user> Username of the repository
+   --user <user>
+    -r <repo> Name of the git repository
+   --repo <repo>
+   --git      Use git connection
+   --ssl      Use https connection (default is git)
+
+Config: Use 'remote.conf' to configure variables.
+        Keep in mind using argument options 
+        will override the configuration variables.
+"
+
+show_help() {
+  echo "Add multiple remotes(servers) for the same repository <repo>."
+  echo ""
+  echo "Usage: git multi-remote $USAGE"
+  echo ""
+  echo "$LONG_USAGE"
+  exit 0
+}
+
+# Show the help message right away
+case "$1" in
+  -h|--h|--help)
+    show_help
+    ;;
+esac
+
+set -u
+#set -e
+
 # Add Multiple Repository Server Script
-# usage: git-multi-remote.sh -u username -r repository
+# usage: git multi-remote -u <username> -r <repository>
 
 # Get the script directory to find the config file
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+BIN="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+DIR="$( cd "$( dirname "${BIN}" )" >/dev/null 2>&1 && pwd )"
 
 # Connection to the url address
 declare -A URL
@@ -16,7 +51,7 @@ URL=(
 # Comment out the repository servers you do not have with the '#' character
 declare -A REMOTES     # Explicitly declare key value array
 REMOTES=(
-  [hub]=github.com
+  [gh]=github.com
 )
 # Reserve booleans to check if remotes have been already added
 declare -A STATUS
@@ -30,49 +65,14 @@ CONFIG=(
 )
 
 # Set the main origin remote
-ORIGIN="${REMOTES[hub]}"
-
-
-USAGE="[-u <user>] [-r <repo>] [--ssl]"
-LONG_USAGE="Add multiple remotes(server) for the same repository <repo>.
-Config: Use 'remote.conf' to configure variables.
-        Keep in mind using argument options 
-        will override the configuration variables.
-
-Note: The argument order does not matter.
-Options:
-    -u <user> Username of the repository
-   --user <user>
-    -r <repo> Name of the git repository
-   --repo <repo>
-   --git      Use git connection
-   --ssl      Use https connection (default is git)
-
-"
-
-directory_as_repository() {
-  IFS='/'
-   # Read pwd into an array as tokens separated by IFS
-  read -ra FULLPATH <<< "$PWD"
-  # Reset to default value after usage
-  IFS=' '
-
-  # Get the last index to get the current directory
-  last=$(("${#FULLPATH[@]}"-1))
-  repo="${FULLPATH[$last]}"
-
-  echo "multi-remote: using '$repo' as default repository"
-  set_repository $repo
-}
+GIT_DIR=""
+ORIGIN="${REMOTES[gh]}"
 
 # Check if current directory is a git repository
 check_git() {
-  if [ -d .git ]; then
-    echo "multi-remote: adding multiple remotes for '${CONFIG[REPO]}'
-"
-  else
-    git rev-parse --git-dir 2> /dev/null
-    echo "fatal: not a git repository"
+  if [ ! -d .git ]; then
+    echo "fatal: Not a git repository"
+    #git rev-parse --git-dir 2> /dev/null
     exit 0
   fi
 }
@@ -90,13 +90,29 @@ check_ssl() {
 
 check_variables() {
   if [ -z "${CONFIG[USER]}" ]; then
-    echo "fatal: username is empty"
+    echo "fatal: username is empty. use -u <user>"
     exit 0
   fi
 
   if [ -z "${CONFIG[REPO]}" ]; then
-    directory_as_repository
+    echo "fatal: repository is empty. use -r <repo>"
+    exit 0
   fi
+}
+
+fetch_git_directory() {
+  IFS='/'
+   # Read pwd into an array as tokens separated by IFS
+  read -ra FULLPATH <<< "$PWD"
+  # Reset to default value after usage
+  IFS=' '
+
+  # Get the last index to get the current directory
+  last=$((${#FULLPATH[@]}-1))
+  repo="${FULLPATH[$last]}"
+
+  GIT_DIR=$repo
+  echo "multi-remote: using '$repo' as default repository"
 }
 
 init_config() {
@@ -115,7 +131,7 @@ init_config() {
       # Fetch the value
       val=$(echo "$line" | cut -d '=' -f 2-)
 
-      # echo "$var [ ${key^^} ] = $val"
+      #echo "$var [ ${key^^} ] = $val"
 
       # Skip unassigned variables
       if [ -z $val ]; then continue; fi
@@ -123,6 +139,15 @@ init_config() {
       # Assign the configurations
       case "$var" in
         REMOTES)
+          # the space after the colon is required to get the last character
+          asterisk="${val: -1}"
+          if [ "$asterisk" = "*" ]; then
+            # reassign the val and set the origin
+            val="${val%?}"
+            ORIGIN=$val
+            echo "multi-remote: using '$val' as origin remote"
+          fi
+
           REMOTES[$key]=$val
           STATUS[$key]=true
           ;;
@@ -130,6 +155,11 @@ init_config() {
         CONFIG)
           if [ $key = "ssl" ]; then
             CONFIG[${key^^}]=$val
+          elif [ $key = "repo" ] && [ $val = "GIT_DIR" ]; then
+            fetch_git_directory
+            # Store the variable so we can access the actual value
+            default="$val[@]"
+            CONFIG[${key^^}]=${!default}
           else
             CONFIG[${key^^}]=$(echo "$val")
           fi
@@ -146,11 +176,7 @@ main() {
     # echo "Looping: $1"
     # echo "value: $2"
     case "$1" in
-      -h|--h|--help)
-        show_help
-        ;;
-
-      -r|--r|--re|--rep|--repo)
+      -r|--r|--repo)
         shift
         set_repository "$1"
         ;;
@@ -182,6 +208,8 @@ main() {
 }
 
 remote_origin() {
+  echo "multi-remote: adding multiple remotes for '${CONFIG[REPO]}' ...
+"
   main="git remote add origin ${URL[CON]}$ORIGIN${URL[AND]}${CONFIG[USER]}/${CONFIG[REPO]}.git"
   echo "$main"
   $main
@@ -194,13 +222,16 @@ remote_add() {
     url=${REMOTES[$i]}
     add_repo="git remote add $key ${URL[CON]}$url${URL[AND]}${CONFIG[USER]}/${CONFIG[REPO]}.git"
 
-    echo "$add_repo"
     $add_repo
     # Fetch the output result 0 means the remote was added successfully
     result=$?
     # Make sure we do not get a failure otherwise skip adding the remote set-url
     if [[ $result -ne 0 ]]; then
-        STATUS[$i]=false
+      STATUS[$i]=false
+    fi
+    # When the remote was added successful display the command
+    if [[ $result -eq 0 ]]; then
+      echo "$add_repo"
     fi
   done
 }
@@ -214,13 +245,6 @@ remote_seturl() {
       $set_url
     fi
   done
-}
-
-show_help() {
-  echo "usage: $(basename "$0") $USAGE"
-  echo ""
-  echo "$LONG_USAGE"
-  exit 0
 }
 
 set_repository() {
@@ -242,6 +266,9 @@ $show"
 #     MAIN CODE STARTS HERE     #
 #################################
 
+# First check if the directory has a .git folder
+check_git
+
 # Load the configuration
 init_config
 
@@ -252,8 +279,6 @@ main "$@"
 check_variables
 
 check_ssl
-
-check_git
 
 # After checking all the requirements start the git remote process
 remote_origin
