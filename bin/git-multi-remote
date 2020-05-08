@@ -27,11 +27,13 @@ show_help() {
 }
 
 # Show the help message right away
-case "$1" in
-  -h|--h|--help)
-    show_help
-    ;;
-esac
+if [ $# -ne 0 ]; then
+  case "$1" in
+    -h|--h|--help)
+      show_help
+      ;;
+  esac
+fi
 
 # Add Multiple Repository Server Script
 # usage: git multi-remote -u <username> -r <repository>
