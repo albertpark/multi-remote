@@ -9,9 +9,9 @@ Options:
    --user <user>
     -r <repo> Name of the git repository
    --repo <repo>
-    -i <repo> Initialize with git repository
+    -c <repo> Clone with git repository
               must pass in repository name
-   --init <repo>
+   --clone <repo>
    --git      Use git connection
    --ssl      Use https connection (default is git)
 
@@ -75,10 +75,14 @@ ORIGIN="${REMOTES[gh]}"
 
 # Check if current directory is a git repository
 check_git() {
+  if [ "$GIT_INIT" = true ]; then
+    clone_dir
+  fi
+
   if [ ! -d .git ]; then
     echo "fatal: Not a git repository"
     #git rev-parse --git-dir 2> /dev/null
-    exit 0
+    exit -1
   fi
 }
 
@@ -176,6 +180,14 @@ init_config() {
   done < "$DIR/remote.conf"
 }
 
+clone_dir() {
+  clone="git clone ${URL[CON]}$ORIGIN${URL[AND]}${CONFIG[USER]}/${CONFIG[REPO]}.git"
+  $clone
+  echo "$clone"
+
+  cd "${CONFIG[REPO]}"
+}
+
 main() {
   # Loop to fetch all the commands
   while case "$#" in 0) break ;; esac
@@ -220,12 +232,26 @@ main() {
   done
 }
 
+new_fetch() {
+  if [ "$GIT_INIT" = true ]; then
+    echo ""
+    echo "fetching origin ..."
+    fetch="git fetch origin"
+    $fetch
+
+    checkout="git checkout master"
+    $checkout
+  fi
+}
+
 remote_origin() {
-  echo "multi-remote: adding multiple remotes for '${CONFIG[REPO]}' ...
-"
-  main="git remote add origin ${URL[CON]}$ORIGIN${URL[AND]}${CONFIG[USER]}/${CONFIG[REPO]}.git"
-  echo "$main"
-  $main
+  if [ "$GIT_INIT" = false ]; then
+    echo "multi-remote: adding multiple remotes for '${CONFIG[REPO]}' ..."
+    echo ""
+    main="git remote add origin ${URL[CON]}$ORIGIN${URL[AND]}${CONFIG[USER]}/${CONFIG[REPO]}.git"
+    echo "$main"
+    $main
+  fi
 }
 
 remote_add() {
@@ -270,8 +296,8 @@ set_username() {
 
 show_origin() {
   show="git remote show origin"
-  echo "
-$show"
+  echo ""
+  echo "$show"
   $show
 }
 
@@ -285,13 +311,14 @@ init_config
 # Options passed in the arguments will override the configuration
 main "$@"
 
-# First check if the directory has a .git folder
-check_git
+# Setup the connection
+check_ssl
 
 # Make sure to check the connection first
 check_variables
 
-check_ssl
+# Check if the directory has a .git folder
+check_git
 
 # After checking all the requirements start the git remote process
 remote_origin
@@ -301,5 +328,7 @@ remote_add
 remote_seturl
 
 show_origin
+
+#new_fetch
 
 exit 0
