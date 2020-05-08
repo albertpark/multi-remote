@@ -9,7 +9,11 @@ Options:
    --user <user>
     -r <repo> Name of the git repository
    --repo <repo>
-    -c <repo> Clone with git repository
+    -i <repo> Initialize with git repository
+              must pass in repository name
+   --init <repo>
+   --git      Use git connection
+    -c <repo> Clone git repository
               must pass in repository name
    --clone <repo>
    --git      Use git connection
@@ -69,14 +73,19 @@ CONFIG=(
 )
 
 # Set the main origin remote
+GIT_CLONE=false
 GIT_INIT=false
 GIT_DIR=false
 ORIGIN="${REMOTES[gh]}"
 
 # Check if current directory is a git repository
 check_git() {
-  if [ "$GIT_INIT" = true ]; then
+  if [ "$GIT_CLONE" = true ]; then
     clone_dir
+  fi
+
+  if [ "$GIT_init" = true ]; then
+    init_dir
   fi
 
   if [ ! -d .git ]; then
@@ -113,6 +122,14 @@ check_variables() {
     echo "fatal: repository is empty. use -r <repo>"
     exit 0
   fi
+}
+
+clone_dir() {
+  clone="git clone ${URL[CON]}$ORIGIN${URL[AND]}${CONFIG[USER]}/${CONFIG[REPO]}.git"
+  $clone
+  echo "$clone"
+
+  cd "${CONFIG[REPO]}"
 }
 
 fetch_git_directory() {
@@ -180,10 +197,9 @@ init_config() {
   done < "$DIR/remote.conf"
 }
 
-clone_dir() {
-  clone="git clone ${URL[CON]}$ORIGIN${URL[AND]}${CONFIG[USER]}/${CONFIG[REPO]}.git"
-  $clone
-  echo "$clone"
+init_dir() {
+  init="git init ${CONFIG[REPO]}"
+  $init
 
   cd "${CONFIG[REPO]}"
 }
@@ -195,15 +211,21 @@ main() {
     # echo "Looping: $1"
     # echo "value: $2"
     case "$1" in
-      -r|--r|--repo)
+      -c|--c|--clone)
         shift
         set_repository "$1"
+        GIT_CLONE=true
         ;;
 
       -i|--i|--init)
         shift
         set_repository "$1"
         GIT_INIT=true
+        ;;
+
+      -r|--r|--repo)
+        shift
+        set_repository "$1"
         ;;
 
       -u|--u|--user)
@@ -245,7 +267,7 @@ new_fetch() {
 }
 
 remote_origin() {
-  if [ "$GIT_INIT" = false ]; then
+  if [ "$GIT_CLONE" = false ] && [ "$GIT_INIT" = false ]; then
     echo "multi-remote: adding multiple remotes for '${CONFIG[REPO]}' ..."
     echo ""
     main="git remote add origin ${URL[CON]}$ORIGIN${URL[AND]}${CONFIG[USER]}/${CONFIG[REPO]}.git"
@@ -329,6 +351,6 @@ remote_seturl
 
 show_origin
 
-#new_fetch
+new_fetch
 
 exit 0
