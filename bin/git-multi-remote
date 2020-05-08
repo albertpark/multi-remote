@@ -84,7 +84,7 @@ check_git() {
     clone_dir
   fi
 
-  if [ "$GIT_init" = true ]; then
+  if [ "$GIT_INIT" = true ]; then
     init_dir
   fi
 
