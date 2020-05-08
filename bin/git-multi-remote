@@ -1,4 +1,6 @@
 #!/bin/bash
+set -u
+#set -e
 
 USAGE="[-u <user>] [-r <repo>] [--ssl]"
 LONG_USAGE="Note: The argument order does not matter.
@@ -30,9 +32,6 @@ case "$1" in
     show_help
     ;;
 esac
-
-set -u
-#set -e
 
 # Add Multiple Repository Server Script
 # usage: git multi-remote -u <username> -r <repository>
