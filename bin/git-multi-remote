@@ -9,6 +9,9 @@ Options:
    --user <user>
     -r <repo> Name of the git repository
    --repo <repo>
+    -i <repo> Initialize with git repository
+              must pass in repository name
+   --init <repo>
    --git      Use git connection
    --ssl      Use https connection (default is git)
 
@@ -66,7 +69,8 @@ CONFIG=(
 )
 
 # Set the main origin remote
-GIT_DIR=""
+GIT_INIT=false
+GIT_DIR=false
 ORIGIN="${REMOTES[gh]}"
 
 # Check if current directory is a git repository
@@ -95,6 +99,12 @@ check_variables() {
     exit 0
   fi
 
+  if [ -z "${CONFIG[REPO]}" ] && [ "$GIT_DIR" = true ]; then
+    dir=$(fetch_git_directory)
+    set_repository "$dir"
+    echo "multi-remote: using '$dir' as default repository"
+  fi
+
   if [ -z "${CONFIG[REPO]}" ]; then
     echo "fatal: repository is empty. use -r <repo>"
     exit 0
@@ -112,8 +122,7 @@ fetch_git_directory() {
   last=$((${#FULLPATH[@]}-1))
   repo="${FULLPATH[$last]}"
 
-  GIT_DIR=$repo
-  echo "multi-remote: using '$repo' as default repository"
+  echo $repo
 }
 
 init_config() {
@@ -146,7 +155,7 @@ init_config() {
             # reassign the val and set the origin
             val="${val%?}"
             ORIGIN=$val
-            echo "multi-remote: using '$val' as origin remote"
+            echo "multi-remote: using '$val' as the origin remote"
           fi
 
           REMOTES[$key]=$val
@@ -157,10 +166,7 @@ init_config() {
           if [ $key = "ssl" ]; then
             CONFIG[${key^^}]=$val
           elif [ $key = "repo" ] && [ $val = "GIT_DIR" ]; then
-            fetch_git_directory
-            # Store the variable so we can access the actual value
-            default="$val[@]"
-            CONFIG[${key^^}]=${!default}
+            GIT_DIR=true
           else
             CONFIG[${key^^}]=$(echo "$val")
           fi
@@ -180,6 +186,12 @@ main() {
       -r|--r|--repo)
         shift
         set_repository "$1"
+        ;;
+
+      -i|--i|--init)
+        shift
+        set_repository "$1"
+        GIT_INIT=true
         ;;
 
       -u|--u|--user)
@@ -267,14 +279,14 @@ $show"
 #     MAIN CODE STARTS HERE     #
 #################################
 
-# First check if the directory has a .git folder
-check_git
-
 # Load the configuration
 init_config
 
 # Options passed in the arguments will override the configuration
 main "$@"
+
+# First check if the directory has a .git folder
+check_git
 
 # Make sure to check the connection first
 check_variables
