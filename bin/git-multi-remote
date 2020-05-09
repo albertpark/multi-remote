@@ -290,7 +290,7 @@ new_fetch() {
   fi
 }
 
-remote_urls() {
+store_remote_urls() {
   # Build one for the origin
   url=$(build_remote_url $ORIGIN)
   ORIGIN=$url
@@ -376,11 +376,11 @@ check_ssl
 # Make sure to check the connection first
 check_variables
 
+# Construct all the remote urls from the loaded config or options
+store_remote_urls
+
 # Check if the directory has a .git folder
 check_git
-
-# Construct all the remote urls from the loaded config or options
-remote_urls
 
 # After checking all the requirements start the git remote process
 remote_origin
