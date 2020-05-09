@@ -9,13 +9,17 @@ Options:
    --user <user>
     -r <repo> Name of the git repository
    --repo <repo>
-    -i <repo> Initialize with git repository
+    -i <repo> [<alias>]
+              Initialize with git repository
               must pass in repository name
-   --init <repo>
+              optional to pass alias directory
+   --init <repo> [<alias>]
    --git      Use git connection
-    -c <repo> Clone git repository
+    -c <repo> [<alias>]
+              Clone git repository
               must pass in repository name
-   --clone <repo>
+              optional to pass alias directory
+   --clone <repo> [<alias>]
    --git      Use git connection
    --ssl      Use https connection (default is git)
 
@@ -76,6 +80,7 @@ CONFIG=(
 GIT_CLONE=false
 GIT_INIT=false
 GIT_DIR=false
+GIT_ALIAS=""
 ORIGIN="${REMOTES[gh]}"
 
 # Check if current directory is a git repository
@@ -125,9 +130,10 @@ check_variables() {
 }
 
 clone_dir() {
-  clone="git clone ${URL[CON]}$ORIGIN${URL[AND]}${CONFIG[USER]}/${CONFIG[REPO]}.git"
-  $clone
-  echo "$clone"
+  clone="git clone ${URL[CON]}$ORIGIN${URL[AND]}${CONFIG[USER]}/${CONFIG[REPO]}.git $GIT_ALIAS"
+  # Make sure we do not get a failure otherwise stop
+  output=`$clone 2>&1`
+  echo "$output"
 
   cd "${CONFIG[REPO]}"
 }
@@ -198,7 +204,7 @@ init_config() {
 }
 
 init_dir() {
-  init="git init ${CONFIG[REPO]}"
+  init="git init ${CONFIG[REPO]} $GIT_ALIAS"
   $init
 
   cd "${CONFIG[REPO]}"
@@ -215,12 +221,22 @@ main() {
         shift
         set_repository "$1"
         GIT_CLONE=true
+        # Check for alias directory name
+        if [ -n "${2-}" ] && [ `echo $2 | cut -c1-1` != "-" ]; then
+          shift
+          set_alias_dir "$1"
+        fi
         ;;
 
       -i|--i|--init)
         shift
         set_repository "$1"
         GIT_INIT=true
+        # Check for alias directory name
+        if [ -n "${2-}" ] && [ `echo $2 | cut -c1-1` != "-" ]; then
+          shift
+          set_alias_dir "$1"
+        fi
         ;;
 
       -r|--r|--repo)
@@ -306,6 +322,12 @@ remote_seturl() {
       $set_url
     fi
   done
+}
+
+set_alias_dir() {
+  if [ ! -z "$1" ]; then
+    GIT_ALIAS="$1"
+  fi
 }
 
 set_repository() {
