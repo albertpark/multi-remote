@@ -89,7 +89,7 @@ After setting up the configuration file the `git-multi-remote` script can be sav
 ```bash
 # Before setting up the configuration
 → $ git multi-remote -i multi-remote -u albertpark --ssl
-# After
+# After setting up the configuration
 → $ git multi-remote -i multi-remote
 # With an alias directory
 → $ git multi-remote -i multi-remote temp-repo
@@ -97,7 +97,18 @@ After setting up the configuration file the `git-multi-remote` script can be sav
 
 The `--clone` option will clone the git repository and setup all the remotes:
 ```bash
-→ $ git multi-remote -c multi-remote [temp-repo]
+→ $ git multi-remote -c multi-remote [<temp-repo>]
+
+```
+
+### Supports
+
+Here are the remote list that `git-multi-remote` supports:
+```
+• bitbucket.org
+• github.com
+• gitlab.com
+• visualstudio.com (Azure-DevOps)
 
 ```
 
