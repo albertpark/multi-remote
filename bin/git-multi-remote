@@ -134,6 +134,16 @@ clone_dir() {
   # Make sure we do not get a failure otherwise stop
   output=`$clone 2>&1`
   echo "$output"
+  echo "$output" | grep fatal
+  result="$output" | grep fatal
+  # result=`"$output" | grep fatal 2>&1`
+  if [[ "$result" ]]; then
+    echo "ha"
+    exit -1
+  fi
+
+  echo "wf"
+  exit -1
 
   cd "${CONFIG[REPO]}"
 }
