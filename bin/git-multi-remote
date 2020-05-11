@@ -61,6 +61,8 @@ declare -A REMOTES     # Explicitly declare key value array
 REMOTES=(
   [gh]=github.com
 )
+# Store the remote urls
+declare -A RURLS
 # Reserve booleans to check if remotes have been already added
 declare -A STATUS
 
@@ -77,6 +79,28 @@ GIT_CLONE=false
 GIT_INIT=false
 GIT_DIR=false
 ORIGIN="${REMOTES[gh]}"
+
+# Build the remote url
+build_remote_url() {
+  url=""
+  case "$1" in
+    visualstudio.com)
+      # https://albertpark.visualstudio.com/multi-remote/_git/multi-remote
+      # vs-ssh.visualstudio.com:v3/albertpark/multi-remote/multi-remote
+      if [ "${CONFIG[SSL]}" = true ]; then
+        url="${URL[CON]}${CONFIG[USER]}.$1${URL[AND]}${CONFIG[REPO]}${URL[AND]}_git${URL[AND]}${CONFIG[REPO]}"
+      else
+        url="vs-ssh.$1${URL[AND]}v3/${CONFIG[USER]}/${CONFIG[REPO]}/${CONFIG[REPO]}"
+      fi
+      ;;
+      
+    bitbucket.org|github.com|gitlab.com)
+      url="${URL[CON]}$1${URL[AND]}${CONFIG[USER]}/${CONFIG[REPO]}.git"
+      ;;
+  esac
+
+  echo $url
+}
 
 # Check if current directory is a git repository
 check_git() {
@@ -125,7 +149,7 @@ check_variables() {
 }
 
 clone_dir() {
-  clone="git clone ${URL[CON]}$ORIGIN${URL[AND]}${CONFIG[USER]}/${CONFIG[REPO]}.git"
+  clone="git clone $ORIGIN"
   $clone
   echo "$clone"
 
@@ -266,22 +290,35 @@ new_fetch() {
   fi
 }
 
+store_remote_urls() {
+  # Build one for the origin
+  url=$(build_remote_url $ORIGIN)
+  ORIGIN=$url
+
+  for i in "${!REMOTES[@]}"
+  do
+    key=$i
+    url=$(build_remote_url ${REMOTES[$i]})
+    RURLS[$i]=$url
+  done
+}
+
 remote_origin() {
   if [ "$GIT_CLONE" = false ]; then
     echo "multi-remote: adding multiple remotes for '${CONFIG[REPO]}' ..."
     echo ""
-    main="git remote add origin ${URL[CON]}$ORIGIN${URL[AND]}${CONFIG[USER]}/${CONFIG[REPO]}.git"
+    main="git remote add origin $ORIGIN"
     echo "$main"
     $main
   fi
 }
 
 remote_add() {
-  for i in "${!REMOTES[@]}"
+  for i in "${!RURLS[@]}"
   do
     key=$i
-    url=${REMOTES[$i]}
-    add_repo="git remote add $key ${URL[CON]}$url${URL[AND]}${CONFIG[USER]}/${CONFIG[REPO]}.git"
+    url=${RURLS[$i]}
+    add_repo="git remote add $key $url"
 
     $add_repo
     # Fetch the output result 0 means the remote was added successfully
@@ -298,10 +335,10 @@ remote_add() {
 }
 
 remote_seturl() {
-  for i in "${!REMOTES[@]}"
+  for i in "${!RURLS[@]}"
   do
     if [ "${STATUS[$i]}" = true ]; then
-      set_url="git remote set-url --add --push origin ${URL[CON]}${REMOTES[$i]}${URL[AND]}${CONFIG[USER]}/${CONFIG[REPO]}.git"
+      set_url="git remote set-url --add --push origin ${RURLS[$i]}"
       echo "$set_url"
       $set_url
     fi
@@ -338,6 +375,9 @@ check_ssl
 
 # Make sure to check the connection first
 check_variables
+
+# Construct all the remote urls from the loaded config or options
+store_remote_urls
 
 # Check if the directory has a .git folder
 check_git
