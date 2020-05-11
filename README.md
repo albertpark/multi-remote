@@ -1,8 +1,10 @@
 # git multi-remote - Add multiple remote servers
 
+
 ## Introduction
 
 This script will help you setup multiple remote servers for the same repository.
+
 
 ## Installation
 
@@ -15,6 +17,7 @@ In order to use `git-multi-remote` script as new subcommands with git, it needs 
 ```bash
 → $ export PATH=$PATH:~/multi-remote/bin
 ```
+
 
 ## Usage
 
@@ -31,6 +34,17 @@ Options:
    --user <user>
     -r <repo> Name of the git repository
    --repo <repo>
+    -i <repo> [<alias>]
+              Initialize with git repository
+              must pass in repository name
+              optional to pass alias directory
+   --init <repo> [<alias>]
+   --git      Use git connection
+    -c <repo> [<alias>]
+              Clone git repository
+              must pass in repository name
+              optional to pass alias directory
+   --clone <repo> [<alias>]
    --git      Use git connection
    --ssl      Use https connection (default is git)
 
@@ -40,7 +54,6 @@ Config: Use 'remote.conf' to configure variables.
 ```
 
 Now go to your desired directory to set up multiple remote servers and run the script by replacing the `<username>` and `<repo>` to your username and repository name:
-
 ```bash
 → $ git init temp-repo
 → $ cd temp-repo
@@ -48,6 +61,7 @@ Now go to your desired directory to set up multiple remote servers and run the s
 ```
 
 The `--ssl` flag is optional and will set the remote with a `HTTPS` connection. The default connection will be `SSH` (`git`). When `<repo>` is not configured or defined the script will use the working directory as the default repository name.
+
 
 ## Configuration
 
@@ -67,6 +81,25 @@ CONFIG.user=albertpark
 CONFIG.repo=multi-remote
 ```
 Note: Options passed in the arguments will override the configuration settings.
+
+
+## Shortcuts
+
+After setting up the configuration file the `git-multi-remote` script can be save you some keystrokes. Usage with the `--init` option:
+```bash
+# Before setting up the configuration
+→ $ git multi-remote -i multi-remote -u albertpark --ssl
+# After
+→ $ git multi-remote -i multi-remote
+# With an alias directory
+→ $ git multi-remote -i multi-remote temp-repo
+```
+
+The `--clone` option will clone the git repository and setup all the remotes:
+```bash
+→ $ git multi-remote -c multi-remote [temp-repo]
+
+```
 
 ## License
 
