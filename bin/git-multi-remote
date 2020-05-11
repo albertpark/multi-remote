@@ -134,18 +134,18 @@ clone_dir() {
   # Make sure we do not get a failure otherwise stop
   output=`$clone 2>&1`
   echo "$output"
-  echo "$output" | grep fatal
-  result="$output" | grep fatal
-  # result=`"$output" | grep fatal 2>&1`
-  if [[ "$result" ]]; then
-    echo "ha"
+  if [[ "$output" == *"fatal"* ]]; then
     exit -1
   fi
 
-  echo "wf"
-  exit -1
-
-  cd "${CONFIG[REPO]}"
+  # If navigation fails halt
+  change="cd $GIT_ALIAS"
+  result=`$change 2>&1`
+  $change
+  if [[ $result == *"No such"* ]]; then
+    echo "multi-remote: No such directory for '$GIT_ALIAS'"
+    exit -1
+  fi
 }
 
 fetch_git_directory() {
@@ -214,10 +214,23 @@ init_config() {
 }
 
 init_dir() {
-  init="git init ${CONFIG[REPO]} $GIT_ALIAS"
-  $init
+  init="git init $GIT_ALIAS"
+  # Make sure we do not get a failure otherwise stop
+  output=`$init 2>&1`
+  echo "$output"
+  if [[ "$output" == *"fatal"* ]]; then
+    exit -1
+  fi
 
-  cd "${CONFIG[REPO]}"
+  # If navigation fails halt
+  change="cd $GIT_ALIAS"
+  result=`$change 2>&1`
+  # Navigate to it
+  $change
+  if [[ $result == *"No such"* ]]; then
+    echo "multi-remote: No such directory for '$GIT_ALIAS'"
+    exit -1
+  fi
 }
 
 main() {
@@ -234,8 +247,8 @@ main() {
         # Check for alias directory name
         if [ -n "${2-}" ] && [ `echo $2 | cut -c1-1` != "-" ]; then
           shift
-          set_alias_dir "$1"
         fi
+        set_alias_dir "$1"
         ;;
 
       -i|--i|--init)
@@ -245,8 +258,8 @@ main() {
         # Check for alias directory name
         if [ -n "${2-}" ] && [ `echo $2 | cut -c1-1` != "-" ]; then
           shift
-          set_alias_dir "$1"
         fi
+        set_alias_dir "$1"
         ;;
 
       -r|--r|--repo)
