@@ -30,25 +30,25 @@ Usage: git multi-remote [-u <user>] [-r <repo>] [--ssl]
 
 Note: The argument order does not matter.
 Options:
-    -u <user> Username of the repository
-   --user <user>
-    -r <repo> Name of the git repository
-   --repo <repo>
-    -i <repo> [<alias>]
-              Initialize with git repository
-              must pass in repository name
-              optional to pass alias directory
-   --init <repo> [<alias>]
     -c <repo> [<alias>]
               Clone git repository
               must pass in repository name
               optional to pass alias directory
    --clone <repo> [<alias>]
    --git      Use git connection
+    -i <repo> [<alias>]
+              Initialize with git repository
+              must pass in repository name
+              optional to pass alias directory
+   --init <repo> [<alias>]
+    -r <repo> Name of the git repository
+   --repo <repo>
    --ssl      Use https connection (default is git)
+    -u <user> Username of the repository
+   --user <user>
 
 Config: Use 'remote.conf' to configure variables.
-        Keep in mind using argument options
+        Keep in mind using argument options 
         will override the configuration variables.
 ```
 
