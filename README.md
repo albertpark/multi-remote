@@ -39,7 +39,6 @@ Options:
               must pass in repository name
               optional to pass alias directory
    --init <repo> [<alias>]
-   --git      Use git connection
     -c <repo> [<alias>]
               Clone git repository
               must pass in repository name
