@@ -1,14 +1,26 @@
 #!/bin/bash
+set -u
+#set -e
 
 USAGE="[-u <user>] [-r <repo>] [--ssl]"
 LONG_USAGE="Note: The argument order does not matter.
 Options:
-    -u <user> Username of the repository
-   --user <user>
+    -c <repo> [<alias>]
+              Clone git repository
+              must pass in repository name
+              optional to pass alias directory
+   --clone <repo> [<alias>]
+   --git      Use git connection
+    -i <repo> [<alias>]
+              Initialize with git repository
+              must pass in repository name
+              optional to pass alias directory
+   --init <repo> [<alias>]
     -r <repo> Name of the git repository
    --repo <repo>
-   --git      Use git connection
    --ssl      Use https connection (default is git)
+    -u <user> Username of the repository
+   --user <user>
 
 Config: Use 'remote.conf' to configure variables.
         Keep in mind using argument options 
@@ -33,9 +45,6 @@ if [ $# -ne 0 ]; then
   esac
 fi
 
-set -u
-#set -e
-
 # Add Multiple Repository Server Script
 # usage: git multi-remote -u <username> -r <repository>
 
@@ -55,6 +64,8 @@ declare -A REMOTES     # Explicitly declare key value array
 REMOTES=(
   [gh]=github.com
 )
+# Store the remote urls
+declare -A RURLS
 # Reserve booleans to check if remotes have been already added
 declare -A STATUS
 
@@ -67,15 +78,48 @@ CONFIG=(
 )
 
 # Set the main origin remote
-GIT_DIR=""
+GIT_CLONE=false
+GIT_INIT=false
+GIT_DIR=false
+GIT_ALIAS=""
 ORIGIN="${REMOTES[gh]}"
+
+# Build the remote url
+build_remote_url() {
+  url=""
+  case "$1" in
+    visualstudio.com)
+      # https://albertpark.visualstudio.com/multi-remote/_git/multi-remote
+      # vs-ssh.visualstudio.com:v3/albertpark/multi-remote/multi-remote
+      if [ "${CONFIG[SSL]}" = true ]; then
+        url="${URL[CON]}${CONFIG[USER]}.$1${URL[AND]}${CONFIG[REPO]}${URL[AND]}_git${URL[AND]}${CONFIG[REPO]}"
+      else
+        url="vs-ssh.$1${URL[AND]}v3/${CONFIG[USER]}/${CONFIG[REPO]}/${CONFIG[REPO]}"
+      fi
+      ;;
+      
+    bitbucket.org|github.com|gitlab.com)
+      url="${URL[CON]}$1${URL[AND]}${CONFIG[USER]}/${CONFIG[REPO]}.git"
+      ;;
+  esac
+
+  echo $url
+}
 
 # Check if current directory is a git repository
 check_git() {
+  if [ "$GIT_CLONE" = true ]; then
+    clone_dir
+  fi
+
+  if [ "$GIT_INIT" = true ]; then
+    init_dir
+  fi
+
   if [ ! -d .git ]; then
     echo "fatal: Not a git repository"
     #git rev-parse --git-dir 2> /dev/null
-    exit 0
+    exit -1
   fi
 }
 
@@ -96,9 +140,34 @@ check_variables() {
     exit 0
   fi
 
+  if [ -z "${CONFIG[REPO]}" ] && [ "$GIT_DIR" = true ]; then
+    dir=$(fetch_git_directory)
+    set_repository "$dir"
+    echo "multi-remote: using '$dir' as default repository"
+  fi
+
   if [ -z "${CONFIG[REPO]}" ]; then
     echo "fatal: repository is empty. use -r <repo>"
     exit 0
+  fi
+}
+
+clone_dir() {
+  clone="git clone $ORIGIN $GIT_ALIAS"
+  # Make sure we do not get a failure otherwise stop
+  output=`$clone 2>&1`
+  echo "$output"
+  if [[ "$output" == *"fatal"* ]]; then
+    exit -1
+  fi
+
+  # If navigation fails halt
+  change="cd $GIT_ALIAS"
+  result=`$change 2>&1`
+  $change
+  if [[ $result == *"No such"* ]]; then
+    echo "multi-remote: No such directory for '$GIT_ALIAS'"
+    exit -1
   fi
 }
 
@@ -113,8 +182,7 @@ fetch_git_directory() {
   last=$((${#FULLPATH[@]}-1))
   repo="${FULLPATH[$last]}"
 
-  GIT_DIR=$repo
-  echo "multi-remote: using '$repo' as default repository"
+  echo $repo
 }
 
 init_config() {
@@ -147,7 +215,7 @@ init_config() {
             # reassign the val and set the origin
             val="${val%?}"
             ORIGIN=$val
-            echo "multi-remote: using '$val' as origin remote"
+            echo "multi-remote: using '$val' as the origin remote"
           fi
 
           REMOTES[$key]=$val
@@ -158,10 +226,7 @@ init_config() {
           if [ $key = "ssl" ]; then
             CONFIG[${key^^}]=$val
           elif [ $key = "repo" ] && [ $val = "GIT_DIR" ]; then
-            fetch_git_directory
-            # Store the variable so we can access the actual value
-            default="$val[@]"
-            CONFIG[${key^^}]=${!default}
+            GIT_DIR=true
           else
             CONFIG[${key^^}]=$(echo "$val")
           fi
@@ -171,6 +236,26 @@ init_config() {
   done < "$DIR/remote.conf"
 }
 
+init_dir() {
+  init="git init $GIT_ALIAS"
+  # Make sure we do not get a failure otherwise stop
+  output=`$init 2>&1`
+  echo "$output"
+  if [[ "$output" == *"fatal"* ]]; then
+    exit -1
+  fi
+
+  # If navigation fails halt
+  change="cd $GIT_ALIAS"
+  result=`$change 2>&1`
+  # Navigate to it
+  $change
+  if [[ $result == *"No such"* ]]; then
+    echo "multi-remote: No such directory for '$GIT_ALIAS'"
+    exit -1
+  fi
+}
+
 main() {
   # Loop to fetch all the commands
   while case "$#" in 0) break ;; esac
@@ -178,6 +263,28 @@ main() {
     # echo "Looping: $1"
     # echo "value: $2"
     case "$1" in
+      -c|--c|--clone)
+        shift
+        set_repository "$1"
+        GIT_CLONE=true
+        # Check for alias directory name
+        if [ -n "${2-}" ] && [ `echo $2 | cut -c1-1` != "-" ]; then
+          shift
+        fi
+        set_alias_dir "$1"
+        ;;
+
+      -i|--i|--init)
+        shift
+        set_repository "$1"
+        GIT_INIT=true
+        # Check for alias directory name
+        if [ -n "${2-}" ] && [ `echo $2 | cut -c1-1` != "-" ]; then
+          shift
+        fi
+        set_alias_dir "$1"
+        ;;
+
       -r|--r|--repo)
         shift
         set_repository "$1"
@@ -209,20 +316,47 @@ main() {
   done
 }
 
-remote_origin() {
-  echo "multi-remote: adding multiple remotes for '${CONFIG[REPO]}' ...
-"
-  main="git remote add origin ${URL[CON]}$ORIGIN${URL[AND]}${CONFIG[USER]}/${CONFIG[REPO]}.git"
-  echo "$main"
-  $main
+new_fetch() {
+  if [ "$GIT_INIT" = true ]; then
+    echo ""
+    echo "fetching origin ..."
+    fetch="git fetch origin"
+    $fetch
+
+    checkout="git checkout master"
+    $checkout
+  fi
 }
 
-remote_add() {
+store_remote_urls() {
+  # Build one for the origin
+  url=$(build_remote_url $ORIGIN)
+  ORIGIN=$url
+
   for i in "${!REMOTES[@]}"
   do
     key=$i
-    url=${REMOTES[$i]}
-    add_repo="git remote add $key ${URL[CON]}$url${URL[AND]}${CONFIG[USER]}/${CONFIG[REPO]}.git"
+    url=$(build_remote_url ${REMOTES[$i]})
+    RURLS[$i]=$url
+  done
+}
+
+remote_origin() {
+  if [ "$GIT_CLONE" = false ]; then
+    echo "multi-remote: adding multiple remotes for '${CONFIG[REPO]}' ..."
+    echo ""
+    main="git remote add origin $ORIGIN"
+    echo "$main"
+    $main
+  fi
+}
+
+remote_add() {
+  for i in "${!RURLS[@]}"
+  do
+    key=$i
+    url=${RURLS[$i]}
+    add_repo="git remote add $key $url"
 
     $add_repo
     # Fetch the output result 0 means the remote was added successfully
@@ -239,14 +373,20 @@ remote_add() {
 }
 
 remote_seturl() {
-  for i in "${!REMOTES[@]}"
+  for i in "${!RURLS[@]}"
   do
     if [ "${STATUS[$i]}" = true ]; then
-      set_url="git remote set-url --add --push origin ${URL[CON]}${REMOTES[$i]}${URL[AND]}${CONFIG[USER]}/${CONFIG[REPO]}.git"
+      set_url="git remote set-url --add --push origin ${RURLS[$i]}"
       echo "$set_url"
       $set_url
     fi
   done
+}
+
+set_alias_dir() {
+  if [ ! -z "$1" ]; then
+    GIT_ALIAS="$1"
+  fi
 }
 
 set_repository() {
@@ -259,8 +399,8 @@ set_username() {
 
 show_origin() {
   show="git remote show origin"
-  echo "
-$show"
+  echo ""
+  echo "$show"
   $show
 }
 
@@ -268,19 +408,23 @@ $show"
 #     MAIN CODE STARTS HERE     #
 #################################
 
-# First check if the directory has a .git folder
-check_git
-
 # Load the configuration
 init_config
 
 # Options passed in the arguments will override the configuration
 main "$@"
 
+# Setup the connection
+check_ssl
+
 # Make sure to check the connection first
 check_variables
 
-check_ssl
+# Construct all the remote urls from the loaded config or options
+store_remote_urls
+
+# Check if the directory has a .git folder
+check_git
 
 # After checking all the requirements start the git remote process
 remote_origin
@@ -290,5 +434,7 @@ remote_add
 remote_seturl
 
 show_origin
+
+new_fetch
 
 exit 0
