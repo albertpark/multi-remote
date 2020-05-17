@@ -131,13 +131,13 @@ Usage with the `--init` option:
 ### Supports
 
 Here are the remote list that `git-multi-remote` supports:
-```
+<pre>
+• azure.com (<b>also</b> dev.azure.com)
 • bitbucket.org
 • github.com
 • gitlab.com
 • visualstudio.com (Azure-DevOps)
-
-```
+</pre>
 
 ## License
 
