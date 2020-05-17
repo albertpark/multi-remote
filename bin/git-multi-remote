@@ -58,7 +58,6 @@ URL=(
   [CON]=""
   [AND]=""
 )
-
 # Comment out the repository servers you do not have with the '#' character
 declare -A REMOTES     # Explicitly declare key value array
 REMOTES=(
@@ -68,7 +67,6 @@ REMOTES=(
 declare -A RURLS
 # Reserve booleans to check if remotes have been already added
 declare -A STATUS
-
 # Use the remote.conf file to setup configuration
 declare -A CONFIG
 CONFIG=(
@@ -83,6 +81,7 @@ GIT_INIT=false
 GIT_DIR=false
 GIT_ALIAS=""
 ORIGIN="${REMOTES[gh]}"
+USED_DEVOPS=false
 
 # Build the remote url
 build_remote_url() {
@@ -352,9 +351,32 @@ store_remote_urls() {
 
   for i in "${!REMOTES[@]}"
   do
+    add=true
     key=$i
     url=$(build_remote_url ${REMOTES[$i]})
-    RURLS[$i]=$url
+
+    # Do not add duplicate remote servers
+    if [[ " ${RURLS[@]} " =~ " ${url} " ]]; then
+      add=false
+    fi
+
+    # Check for devops remote since they have alternative urls
+    case "${REMOTES[$i]}" in
+      azure.com|dev.azure.com|visualstudio.com)
+        if [ "$USED_DEVOPS" = true ]; then
+          add=false
+        fi
+
+        USED_DEVOPS=true
+        ;;
+    esac
+
+    # Filter the duplicates
+    if [ "$add" = false ]; then
+      echo "multi-remote: removing duplicate remote '${REMOTES[$i]}'"
+    else
+      RURLS[$i]=$url
+    fi
   done
 }
 
